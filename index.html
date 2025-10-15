@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Dự Đoán Bệnh Alzheimer</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@500;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-gradient: linear-gradient(135deg, #8a2be2 0%, #4b0082 50%, #ff00ff 100%);
+            --secondary-gradient: linear-gradient(135deg, #00ddeb 0%, #00b7eb 100%);
+            --success-gradient: linear-gradient(135deg, #00ff9f 0%, #00cc99 100%);
+            --warning-gradient: linear-gradient(135deg, #ffcc00 0%, #ff9900 100%);
+            --danger-gradient: linear-gradient(135deg, #ff3366 0%, #cc0033 100%);
+            --glass-bg: rgba(20, 20, 40, 0.15);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --shadow-glow: 0 0 15px rgba(138, 43, 226, 0.3), 0 0 30px rgba(0, 221, 235, 0.2);
+            --neon-glow: 0 0 5px rgba(0, 221, 235, 0.8), 0 0 15px rgba(0, 221, 235, 0.5);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(circle at center, #1a1a3d 0%, #0d0d1f 100%);
+            min-height: 100vh;
+            padding: 30px;
+            position: relative;
+            overflow-x: hidden;
+            color: #e0e0ff;
+        }
+
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(0, 221, 235, 0.5);
+            border-radius: 50%;
+            box-shadow: var(--neon-glow);
+            animation: drift 8s ease-in-out infinite;
+        }
+
+        @keyframes drift {
+            0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.2; }
+            50% { transform: translate(var(--tx), var(--ty)) scale(1.2); opacity: 0.8; }
+        }
+
+        .container {
+            max-width: 1500px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+            position: relative;
+        }
+
+        .header h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 3.5rem;
+            font-weight: 700;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: var(--neon-glow);
+            animation: pulseGlow 2.5s ease-in-out infinite;
+        }
+
+        @keyframes pulseGlow {
+            0% { text-shadow: 0 0 5px rgba(0, 221, 235, 0.5), 0 0 15px rgba(138, 43, 226, 0.4); }
+            50% { text-shadow: 0 0 10px rgba(0, 221, 235, 0.8), 0 0 25px rgba(138, 43, 226, 0.6); }
+            100% { text-shadow: 0 0 5px rgba(0, 221, 235, 0.5), 0 0 15px rgba(138, 43, 226, 0.4); }
+        }
+
+        .header p {
+            font-size: 1.3rem;
+            opacity: 0.85;
+            font-weight: 300;
+            background: var(--secondary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: fadeIn 1.5s ease-out both;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 50px;
+            margin-bottom: 50px;
+        }
+
+        .form-section, .result-section {
+            background: var(--glass-bg);
+            backdrop-filter: blur(25px);
+            border: 1px solid var(--glass-border);
+            border-radius: 25px;
+            padding: 40px;
+            box-shadow: var(--shadow-glow);
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .form-section::before, .result-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(0, 221, 235, 0.1) 0%, transparent 70%);
+            opacity: 0.3;
+            z-index: -1;
+            animation: pulseBg 10s ease-in-out infinite;
+        }
+
+        @keyframes pulseBg {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.5; }
+        }
+
+        .form-section:hover, .result-section:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 0 25px rgba(138, 43, 226, 0.5), 0 0 50px rgba(0, 221, 235, 0.3);
+        }
+
+        .form-section h2, .result-section h2 {
+            font-family: 'Orbitron', sans-serif;
+            color: #e0e0ff;
+            margin-bottom: 30px;
+            font-size: 2rem;
+            font-weight: 700;
+            position: relative;
+            padding-bottom: 15px;
+            text-shadow: var(--neon-glow);
+        }
+
+        .form-section h2::after, .result-section h2::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 80px;
+            height: 4px;
+            background: var(--secondary-gradient);
+            border-radius: 4px;
+            animation: neonLine 1.5s ease-out both;
+        }
+
+        @keyframes neonLine {
+            from { width: 0; box-shadow: none; }
+            to { width: 80px; box-shadow: var(--neon-glow); }
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            animation: floatIn 0.8s ease-out forwards;
+        }
+
+        .form-group:nth-child(odd) { animation-delay: calc(0.1s * var(--i)); }
+        .form-group:nth-child(even) { animation: floatInRight 0.8s ease-out forwards; }
+
+        @keyframes floatIn {
+            from { opacity: 0; transform: translate3d(-30px, 10px, 10px); }
+            to { opacity: 1; transform: translate3d(0, 0, 0); }
+        }
+
+        @keyframes floatInRight {
+            from { opacity: 0; transform: translate3d(30px, 10px, 10px); }
+            to { opacity: 1; transform: translate3d(0, 0, 0); }
+        }
+
+        .form-group label {
+            font-weight: 500;
+            color: #e0e0ff;
+            margin-bottom: 10px;
+            font-size: 1rem;
+            text-shadow: 0 0 5px rgba(0, 221, 235, 0.3);
+        }
+
+        .form-group input, .form-group select {
+            padding: 16px 20px;
+            border: 1px solid rgba(0, 221, 235, 0.3);
+            border-radius: 15px;
+            font-size: 1rem;
+            background: rgba(20, 20, 40, 0.2);
+            color: #e0e0ff;
+            backdrop-filter: blur(10px);
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 0 10px rgba(0, 221, 235, 0.2);
+        }
+
+        .form-group input::placeholder {
+            color: rgba(224, 224, 255, 0.5);
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #00ddeb;
+            box-shadow: 0 0 15px rgba(0, 221, 235, 0.5), 0 0 25px rgba(0, 221, 235, 0.3);
+            transform: scale(1.02);
+            background: rgba(20, 20, 40, 0.3);
+        }
+
+        .form-group select option {
+            background: #1a1a3d;
+            color: #e0e0ff;
+        }
+
+        .btn {
+            background: var(--secondary-gradient);
+            color: #fff;
+            border: none;
+            padding: 20px 40px;
+            border-radius: 50px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            box-shadow: var(--neon-glow);
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.6s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(0, 221, 235, 0.6), 0 0 40px rgba(0, 221, 235, 0.4);
+            filter: brightness(1.2);
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            color: #e0e0ff;
+            margin: 30px 0;
+            animation: neonPulse 1.2s ease-in-out infinite;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(0, 221, 235, 0.3);
+            border-top: 5px solid #00ddeb;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 15px;
+            box-shadow: var(--neon-glow);
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes neonPulse {
+            0% { opacity: 1; text-shadow: 0 0 5px rgba(0, 221, 235, 0.5); }
+            50% { opacity: 0.6; text-shadow: 0 0 15px rgba(0, 221, 235, 0.8); }
+            100% { opacity: 1; text-shadow: 0 0 5px rgba(0, 221, 235, 0.5); }
+        }
+
+        .result-container {
+            display: none;
+            animation: hologram 1s ease-out;
+        }
+
+        .result-container.show {
+            display: block;
+        }
+
+        @keyframes hologram {
+            from { opacity: 0; transform: translateY(20px) scale(0.95); filter: blur(2px); }
+            to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+        }
+
+        .prediction-result {
+            text-align: center;
+            padding: 35px;
+            border-radius: 20px;
+            margin-bottom: 35px;
+            position: relative;
+            overflow: hidden;
+            animation: hologram 1.2s ease-out;
+        }
+
+        .prediction-result::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(0, 221, 235, 0.2) 0%, transparent 60%);
+            animation: rotateHolo 12s linear infinite;
+        }
+
+        @keyframes rotateHolo {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .prediction-result.has-risk {
+            background: linear-gradient(135deg, rgba(255, 51, 102, 0.2), rgba(204, 0, 51, 0.2));
+            border: 2px solid rgba(255, 51, 102, 0.5);
+            color: #ff99cc;
+            box-shadow: 0 0 25px rgba(255, 51, 102, 0.4);
+        }
+
+        .prediction-result.no-risk {
+            background: linear-gradient(135deg, rgba(0, 255, 159, 0.2), rgba(0, 204, 153, 0.2));
+            border: 2px solid rgba(0, 255, 159, 0.5);
+            color: #99ffcc;
+            box-shadow: 0 0 25px rgba(0, 255, 159, 0.4);
+        }
+
+        .prediction-result h3 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.2rem;
+            margin-bottom: 15px;
+            position: relative;
+            z-index: 1;
+            text-shadow: var(--neon-glow);
+        }
+
+        .recommendations {
+            background: linear-gradient(135deg, rgba(0, 221, 235, 0.2), rgba(138, 43, 226, 0.2));
+            backdrop-filter: blur(20px);
+            padding: 30px;
+            border-radius: 20px;
+            border: 1px solid rgba(0, 221, 235, 0.4);
+            color: #e0e0ff;
+            animation: hologram 1.2s ease-out;
+        }
+
+        .recommendations h4 {
+            font-family: 'Orbitron', sans-serif;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            text-shadow: var(--neon-glow);
+        }
+
+        .recommendations ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .recommendations li {
+            padding: 15px 0;
+            border-bottom: 1px solid rgba(0, 221, 235, 0.2);
+            position: relative;
+            padding-left: 35px;
+            opacity: 0;
+            animation: floatIn 0.8s ease-out forwards;
+        }
+
+        .recommendations li:nth-child(n) {
+            animation-delay: calc(0.15s * var(--i));
+        }
+
+        .recommendations li:before {
+            content: "⚡️";
+            position: absolute;
+            left: 0;
+            top: 15px;
+            font-size: 1.3rem;
+            animation: neonBlink 1.5s infinite;
+        }
+
+        @keyframes neonBlink {
+            0%, 100% { opacity: 1; text-shadow: var(--neon-glow); }
+            50% { opacity: 0.5; text-shadow: none; }
+        }
+
+        .error-message {
+            background: linear-gradient(135deg, rgba(255, 51, 102, 0.2), rgba(204, 0, 51, 0.2));
+            color: #ff99cc;
+            padding: 25px;
+            border-radius: 15px;
+            border-left: 6px solid #ff3366;
+            margin: 30px 0;
+            display: none;
+            backdrop-filter: blur(15px);
+            animation: shake 0.6s ease-in-out;
+            box-shadow: 0 0 15px rgba(255, 51, 102, 0.3);
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+
+        .section-divider {
+            border: none;
+            height: 3px;
+            background: var(--secondary-gradient);
+            margin: 40px 0;
+            border-radius: 2px;
+            box-shadow: var(--neon-glow);
+            animation: neonLine 1.5s ease-out;
+        }
+
+        .section-title {
+            font-family: 'Orbitron', sans-serif;
+            color: #e0e0ff;
+            font-size: 1.6rem;
+            font-weight: 700;
+            margin: 30px 0 25px 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-shadow: var(--neon-glow);
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 40px;
+            }
+            
+            .header h1 {
+                font-size: 2.5rem;
+            }
+            
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-section, .result-section {
+                padding: 30px;
+            }
+        }
+
+        .form-group:nth-child(1) { --i: 1; }
+        .form-group:nth-child(2) { --i: 2; }
+        .form-group:nth-child(3) { --i: 3; }
+        .form-group:nth-child(4) { --i: 4; }
+        .form-group:nth-child(5) { --i: 5; }
+        .form-group:nth-child(6) { --i: 6; }
+        .form-group:nth-child(7) { --i: 7; }
+        .form-group:nth-child(8) { --i: 8; }
+        .form-group:nth-child(9) { --i: 9; }
+        .form-group:nth-child(10) { --i: 10; }
+        .form-group:nth-child(11) { --i: 11; }
+        .form-group:nth-child(12) { --i: 12; }
+        .form-group:nth-child(13) { --i: 13; }
+        .form-group:nth-child(14) { --i: 14; }
+        .form-group:nth-child(15) { --i: 15; }
+        .form-group:nth-child(16) { --i: 16; }
+        .form-group:nth-child(17) { --i: 17; }
+        .form-group:nth-child(18) { --i: 18; }
+        .form-group:nth-child(19) { --i: 19; }
+        .form-group:nth-child(20) { --i: 20; }
+        .form-group:nth-child(21) { --i: 21; }
+        .form-group:nth-child(22) { --i: 22; }
+        .form-group:nth-child(23) { --i: 23; }
+        .form-group:nth-child(24) { --i: 24; }
+        .form-group:nth-child(25) { --i: 25; }
+        .form-group:nth-child(26) { --i: 26; }
+        .form-group:nth-child(27) { --i: 27; }
+        .form-group:nth-child(28) { --i: 28; }
+        .form-group:nth-child(29) { --i: 29; }
+        .form-group:nth-child(30) { --i: 30; }
+        .form-group:nth-child(31) { --i: 31; }
+        .form-group:nth-child(32) { --i: 32; }
+        .form-group:nth-child(33) { --i: 33; }
+        .form-group:nth-child(34) { --i: 34; }
+        .form-group:nth-child(35) { --i: 35; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="particles" id="particles"></div>
+
+    <div class="container">
+        <div class="header">
+            <h1>🧠 Hệ Thống Dự Đoán Bệnh Alzheimer</h1>
+            <p>Công nghệ AI tiên tiến đánh giá nguy cơ Alzheimer</p>
+        </div>
+
+        <div class="main-content">
+            <div class="form-section">
+                <h2>📋 Thông Tin Bệnh Nhân</h2>
+                <form id="patientForm">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="patientName">Tên Bệnh Nhân:</label>
+                            <input type="text" id="patientName" name="patientName" required placeholder="Nhập tên bệnh nhân">
+                        </div>
+                        <div class="form-group">
+                            <label for="patientID">Mã Bệnh Nhân:</label>
+                            <input type="text" id="patientID" name="PatientID" required placeholder="Mã tự động" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="doctorInCharge">Bác Sĩ Phụ Trách:</label>
+                            <input type="text" id="doctorInCharge" name="DoctorInCharge" required placeholder="Tên bác sĩ">
+                        </div>
+                        <div class="form-group">
+                            <label for="age">Tuổi:</label>
+                            <input type="number" id="age" name="Age" min="18" max="120" required placeholder="Nhập tuổi">
+                        </div>
+                        <div class="form-group">
+                            <label for="gender">Giới Tính:</label>
+                            <select id="gender" name="Gender" required>
+                                <option value="">Chọn giới tính</option>
+                                <option value="Male">Nam</option>
+                                <option value="Female">Nữ</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="ethnicity">Dân Tộc:</label>
+                            <select id="ethnicity" name="Ethnicity" required>
+                                <option value="">Chọn dân tộc</option>
+                                <option value="Caucasian">Caucasian</option>
+                                <option value="African American">African American</option>
+                                <option value="Asian">Asian</option>
+                                <option value="Other">Khác</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="educationLevel">Trình Độ Học Vấn (năm):</label>
+                            <input type="number" id="educationLevel" name="EducationLevel" min="0" max="25" required placeholder="Số năm học">
+                        </div>
+                    </div>
+
+                    <hr class="section-divider">
+                    <h3 class="section-title">🏃‍♂️ Thông Tin Sức Khỏe</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="bmi">BMI:</label>
+                            <input type="number" id="bmi" name="BMI" step="0.1" min="10" max="50" required placeholder="Chỉ số BMI">
+                        </div>
+                        <div class="form-group">
+                            <label for="smoking">Hút Thuốc:</label>
+                            <select id="smoking" name="Smoking" required>
+                                <option value="">Chọn</option>
+                                <option value="Yes">Có</option>
+                                <option value="No">Không</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="alcoholConsumption">Uống Rượu:</label>
+                            <select id="alcoholConsumption" name="AlcoholConsumption" required>
+                                <option value="">Chọn</option>
+                                <option value="Yes">Có</option>
+                                <option value="No">Không</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="physicalActivity">Hoạt Động Thể Chất:</label>
+                            <select id="physicalActivity" name="PhysicalActivity" required>
+                                <option value="">Chọn</option>
+                                <option value="Yes">Có</option>
+                                <option value="No">Không</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="dietQuality">Chất Lượng Chế Độ Ăn (1-10):</label>
+                            <input type="number" id="dietQuality" name="DietQuality" min="1" max="10" required placeholder="Điểm 1-10">
+                        </div>
+                        <div class="form-group">
+                            <label for="sleepQuality">Chất Lượng Giấc Ngủ (1-10):</label>
+                            <input type="number" id="sleepQuality" name="SleepQuality" min="1" max="10" required placeholder="Điểm 1-10">
+                        </div>
+                    </div>
+
+                    <hr class="section-divider">
+                    <h3 class="section-title">🩺 Tiền Sử Bệnh</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="familyHistoryAlzheimers">Tiền Sử Gia Đình Alzheimer:</label>
+                            <select id="familyHistoryAlzheimers" name="FamilyHistoryAlzheimers" required>
+                                <option value="">Chọn</option>
+                                <option value="Yes">Có</option>
+                                <option value="No">Không</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="cardiovascularDisease">Bệnh Tim Mạch:</label>
+                            <select id="cardiovascularDisease" name="CardiovascularDisease" required>
+                                <option value="">Chọn</option>
+                                <option value="Yes">Có</option>
+                                <option value="No">Không</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="diabetes">Tiểu Đường:</label>
+                            <select id="diabetes" name="Diabetes" required>
+                                <option value="">Chọn</option>
+                                <option value="Yes">Có</option>
+                                <option value="No">Không</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="depression">Trầm Cảm:</label>
+                            <select id="depression" name="Depression" required>
+                                <option value="">Chọn</option>
+                                <option value="Yes">Có</option>
+                                <option value="No">Không</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="headInjury">Chấn Thương Đầu:</label>
+                            <select id="headInjury" name="HeadInjury" required>
+                                <option value="">Chọn</option>
+                                <option value="Yes">Có</option>
+                                <option value="No">Không</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="hypertension">Tăng Huyết Áp:</label>
+                            <select id="hypertension" name="Hypertension" required>
+                                <option value="">Chọn</option>
+                                <option value="Yes">Có</option>
+                                <option value="No">Không</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <hr class="section-divider">
+                    <h3 class="section-title">🔬 Chỉ Số Sinh Học</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="systolicBP">Huyết Áp Tâm Thu:</label>
+                            <input type="number" id="systolicBP" name="SystolicBP" min="80" max="250" required placeholder="mmHg">
+                        </div>
+                        <div class="form-group">
+                            <label for="diastolicBP">Huyết Áp Tâm Trương:</label>
+                            <input type="number" id="diastolicBP" name="DiastolicBP" min="40" max="150" required placeholder="mmHg">
+                        </div>
+                        <div class="form-group">
+                            <label for="cholesterolTotal">Cholesterol Toàn Phần:</label>
+                            <input type="number" id="cholesterolTotal" name="CholesterolTotal" min="100" max="400" required placeholder="mg/dL">
+                        </div>
+                        <div class="form-group">
+                            <label for="cholesterolLDL">Cholesterol LDL:</label>
+                            <input type="number" id="cholesterolLDL" name="CholesterolLDL" min="50" max="300" required placeholder="mg/dL">
+                        </div>
+                        <div class="form-group">
+                            <label for="cholesterolHDL">Cholesterol HDL:</label>
+                            <input type="number" id="cholesterolHDL" name="CholesterolHDL" min="20" max="100" required placeholder="mg/dL">
+                        </div>
+                        <div class="form-group">
+                            <label for="cholesterolTriglycerides">Triglycerides:</label>
+                            <input type="number" id="cholesterolTriglycerides" name="CholesterolTriglycerides" min="30" max="500" required placeholder="mg/dL">
+                        </div>
+                        <div class="form-group">
+                            <label for="mmse">Điểm MMSE (0-30):</label>
+                            <input type="number" id="mmse" name="MMSE" min="0" max="30" required placeholder="Mini-Mental State Exam">
+                        </div>
+                        <div class="form-group">
+                            <label for="functionalAssessment">Đánh Giá Chức Năng (0-10):</label>
+                            <input type="number" id="functionalAssessment" name="FunctionalAssessment" min="0" max="10" required placeholder="Điểm 0-10">
+                        </div>
+                        <div class="form-group">
+                            <label for="adl">Hoạt Động Hàng Ngày (ADL, 0-10):</label>
+                            <input type="number" id="adl" name="ADL" min="0" max="10" required placeholder="Điểm 0-10">
+                        </div>
+                    </div>
+
+                    <hr class="section-divider">
+                    <h3 class="section-title">🧠 Triệu Chứng Nhận Thức</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="memoryComplaints">Than Phiền Về Trí Nhớ:</label>
+                            <select id="memoryComplaints" name="MemoryComplaints" required>
+                                <option value="">Chọn</option>
+                                <option value="Yes">Có</option>
+                                <option value="No">Không</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="behavioralProblems">Vấn Đề Hành Vi:</label>
+                            <select id="behavioralProblems" name="BehavioralProblems" required>
+                                <option value="">Chọn</option>
+                                <option value="Yes">Có</option>
+                                <option value="No">Không</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="confusion">Lú Lẫn:</label>
+                            <select id="confusion" name="Confusion" required>
+                                <option value="">Chọn</option>
+                                <option value="Yes">Có</option>
+                                <option value="No">Không</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="disorientation">Mất Phương Hướng:</label>
+                            <select id="disorientation" name="Disorientation" required>
+                                <option value="">Chọn</option>
+                                <option value="Yes">Có</option>
+                                <option value="No">Không</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="personalityChanges">Thay Đổi Tính Cách:</label>
+                            <select id="personalityChanges" name="PersonalityChanges" required>
+                                <option value="">Chọn</option>
+                                <option value="Yes">Có</option>
+                                <option value="No">Không</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="difficultyCompletingTasks">Khó Hoàn Thành Nhiệm Vụ:</label>
+                            <select id="difficultyCompletingTasks" name="DifficultyCompletingTasks" required>
+                                <option value="">Chọn</option>
+                                <option value="Yes">Có</option>
+                                <option value="No">Không</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="forgetfulness">Hay Quên:</label>
+                            <select id="forgetfulness" name="Forgetfulness" required>
+                                <option value="">Chọn</option>
+                                <option value="Yes">Có</option>
+                                <option value="No">Không</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn" id="predictBtn">DỰ ĐOÁN NGUY CƠ</button>
+                </form>
+                
+                <div class="loading" id="loading">
+                    <div class="loading-spinner"></div>
+                    <p>Đang phân tích bằng AI tiên tiến...</p>
+                </div>
+                
+                <div class="error-message" id="errorMessage">
+                    <p id="errorText">Vui lòng điền đầy đủ và chính xác tất cả các trường!</p>
+                </div>
+            </div>
+            
+            <div class="result-section">
+                <h2>📊 Kết Quả Phân Tích AI</h2>
+                <div class="result-container" id="resultContainer">
+                    <div class="prediction-result" id="predictionResult">
+                        <h3 id="riskLevel">Kết quả: Đang chờ</h3>
+                        <p id="patientInfo">Bệnh nhân: Đang chờ</p>
+                        <p id="interpretation">Giải thích: Đang chờ</p>
+                    </div>
+                    
+                    <div class="recommendations">
+                        <h4>📋 Khuyến Nghị Tương Lai</h4>
+                        <ul id="recommendationsList">
+                            <li style="--i: 1;">Đang chờ kết quả phân tích AI để đưa ra khuyến nghị...</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tạo mã bệnh nhân tự động
+        const patientIDInput = document.getElementById('patientID');
+        patientIDInput.value = 'AI-PT-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+
+        // Tạo hạt nền 3D động (giảm số lượng để tối ưu hiệu suất)
+        const particlesContainer = document.getElementById('particles');
+        function createParticles() {
+            for (let i = 0; i < 50; i++) { // Giảm từ 80 xuống 50
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                const tx = (Math.random() - 0.5) * 50;
+                const ty = (Math.random() - 0.5) * 50;
+                particle.style.left = Math.random() * 100 + 'vw';
+                particle.style.top = Math.random() * 100 + 'vh';
+                particle.style.setProperty('--tx', tx + 'px');
+                particle.style.setProperty('--ty', ty + 'px');
+                particle.style.animationDuration = Math.random() * 5 + 5 + 's';
+                particle.style.animationDelay = Math.random() * 6 + 's';
+                particle.style.width = Math.random() * 3 + 2 + 'px';
+                particle.style.height = particle.style.width;
+                particlesContainer.appendChild(particle);
+            }
+        }
+        createParticles();
+
+        // Xử lý form
+        const patientForm = document.getElementById('patientForm');
+        const predictBtn = document.getElementById('predictBtn');
+        const loading = document.getElementById('loading');
+        const errorMessage = document.getElementById('errorMessage');
+        const errorText = document.getElementById('errorText');
+        const resultContainer = document.getElementById('resultContainer');
+        const predictionResult = document.getElementById('predictionResult');
+        const riskLevel = document.getElementById('riskLevel');
+        const patientInfo = document.getElementById('patientInfo');
+        const interpretation = document.getElementById('interpretation');
+        const recommendationsList = document.getElementById('recommendationsList');
+
+        // Danh sách các trường bắt buộc
+        const requiredFields = [
+            'PatientID', 'DoctorInCharge', 'Age', 'Gender', 'Ethnicity', 'EducationLevel',
+            'BMI', 'Smoking', 'AlcoholConsumption', 'PhysicalActivity', 'DietQuality', 'SleepQuality',
+            'FamilyHistoryAlzheimers', 'CardiovascularDisease', 'Diabetes', 'Depression', 'HeadInjury', 'Hypertension',
+            'SystolicBP', 'DiastolicBP', 'CholesterolTotal', 'CholesterolLDL', 'CholesterolHDL', 'CholesterolTriglycerides',
+            'MMSE', 'FunctionalAssessment', 'MemoryComplaints', 'BehavioralProblems', 'ADL', 'Confusion',
+            'Disorientation', 'PersonalityChanges', 'DifficultyCompletingTasks', 'Forgetfulness'
+        ];
+
+        // Hàm kiểm tra và định dạng dữ liệu
+        function validateAndFormatData(formData) {
+            const data = {};
+            let errors = [];
+
+            for (const field of requiredFields) {
+                const value = formData.get(field);
+                if (!value || value.trim() === '') {
+                    errors.push(`Trường ${field} không được để trống`);
+                    continue;
+                }
+
+                switch (field) {
+                    case 'Age':
+                    case 'EducationLevel':
+                    case 'BMI':
+                    case 'DietQuality':
+                    case 'SleepQuality':
+                    case 'SystolicBP':
+                    case 'DiastolicBP':
+                    case 'CholesterolTotal':
+                    case 'CholesterolLDL':
+                    case 'CholesterolHDL':
+                    case 'CholesterolTriglycerides':
+                    case 'MMSE':
+                    case 'FunctionalAssessment':
+                    case 'ADL':
+                        const numValue = parseFloat(value);
+                        if (isNaN(numValue)) {
+                            errors.push(`Trường ${field} phải là số hợp lệ`);
+                        } else {
+                            data[field] = numValue;
+                        }
+                        break;
+
+                    case 'Gender':
+                        if (!['Male', 'Female'].includes(value)) {
+                            errors.push(`Giới tính phải là Nam hoặc Nữ`);
+                        } else {
+                            data[field] = value;
+                        }
+                        break;
+                    case 'Ethnicity':
+                        if (!['Caucasian', 'African American', 'Asian', 'Other'].includes(value)) {
+                            errors.push(`Dân tộc không hợp lệ`);
+                        } else {
+                            data[field] = value;
+                        }
+                        break;
+
+                    case 'Smoking':
+                    case 'AlcoholConsumption':
+                    case 'PhysicalActivity':
+                    case 'FamilyHistoryAlzheimers':
+                    case 'CardiovascularDisease':
+                    case 'Diabetes':
+                    case 'Depression':
+                    case 'HeadInjury':
+                    case 'Hypertension':
+                    case 'MemoryComplaints':
+                    case 'BehavioralProblems':
+                    case 'Confusion':
+                    case 'Disorientation':
+                    case 'PersonalityChanges':
+                    case 'DifficultyCompletingTasks':
+                    case 'Forgetfulness':
+                        if (!['Yes', 'No'].includes(value)) {
+                            errors.push(`Trường ${field} phải là Có hoặc Không`);
+                        } else {
+                            data[field] = value;
+                        }
+                        break;
+
+                    case 'PatientID':
+                    case 'DoctorInCharge':
+                        data[field] = value.trim();
+                        break;
+                }
+            }
+
+            const patientName = formData.get('patientName');
+            if (patientName && patientName.trim()) {
+                data.patientName = patientName.trim();
+            } else {
+                errors.push(`Tên bệnh nhân không được để trống`);
+            }
+
+            return { data, errors };
+        }
+
+        patientForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(patientForm);
+            const { data, errors } = validateAndFormatData(formData);
+
+            if (errors.length > 0) {
+                errorText.textContent = errors.join('; ');
+                errorMessage.classList.add('show');
+                setTimeout(() => errorMessage.classList.remove('show'), 5000);
+                return;
+            }
+
+            predictBtn.disabled = true;
+            loading.classList.add('show');
+            resultContainer.classList.remove('show');
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+
+                if (response.ok && result.result) {
+                    const riskClass = result.prediction === 1 ? 'has-risk' : 'no-risk';
+                    predictionResult.className = `prediction-result ${riskClass}`;
+                    riskLevel.textContent = `Kết quả: ${result.result || 'Không xác định'}`;
+                    patientInfo.textContent = `Bệnh nhân: ${data.patientName} (${result.patient_id || 'Không xác định'})`;
+                    interpretation.textContent = `Giải thích: ${result.interpretation.split(' với độ tin cậy ')[0] || 'Không có giải thích chi tiết'}`;
+                    recommendationsList.innerHTML = '';
+                    if (result.recommendations && Array.isArray(result.recommendations)) {
+                        result.recommendations.forEach((rec, index) => {
+                            const li = document.createElement('li');
+                            li.style.setProperty('--i', index + 1);
+                            li.textContent = rec;
+                            recommendationsList.appendChild(li);
+                        });
+                    } else {
+                        const li = document.createElement('li');
+                        li.style.setProperty('--i', 1);
+                        li.textContent = 'Không có khuyến nghị cụ thể.';
+                        recommendationsList.appendChild(li);
+                    }
+                    resultContainer.classList.add('show');
+                } else {
+                    errorText.textContent = result.error || 'Lỗi không xác định từ server';
+                    errorMessage.classList.add('show');
+                    setTimeout(() => errorMessage.classList.remove('show'), 5000);
+                }
+            } catch (error) {
+                errorText.textContent = 'Lỗi kết nối với server. Vui lòng thử lại sau!';
+                errorMessage.classList.add('show');
+                setTimeout(() => errorMessage.classList.remove('show'), 5000);
+            } finally {
+                loading.classList.remove('show');
+                predictBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
